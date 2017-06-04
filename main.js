@@ -1,10 +1,12 @@
-const { app, BrowserWindow, Menu, shell } = require('electron')
+const { app, BrowserWindow, Menu, shell, Tray } = require('electron')
 const path = require('path')
 const url = require('url')
 
 const config = require('./config')
 
 function createWindow() {
+  let appIcon = null
+
   mainWindow = new BrowserWindow({
     width: 375,
     height: 667,
@@ -19,13 +21,52 @@ function createWindow() {
     slashes: true
   }))
 
-    // mainWindow.openDevTools()
-    mainWindow.on('closed', () => mainWindow = null)
+    //mainWindow.openDevTools()
+    //mainWindow.on('closed', () => mainWindow = null)
+     mainWindow.on('minimize',function(event){
+        event.preventDefault()
+        mainWindow.hide();
+     });
 
+    mainWindow.on('close', function (event) {
+        if( !app.isQuiting){
+            event.preventDefault()
+            mainWindow.hide();
+        }
+        return false;
+    });
+
+  var contextMenu = Menu.buildFromTemplate([
+
+        { label: 'Show App', click:  function(){
+            mainWindow.show();
+        } },
+        { label: 'Quit', click:  function(){
+            app.isQuiting = true;
+            app.quit();
+
+        } }
+    ]);
+    
     chirpMenu()
-  }
+    }
+  app.on('ready',() => {
+      createWindow
+      appIcon = new Tray(path.join(__dirname, 'icon', 'icon.png'))
 
-  app.on('ready', createWindow)
+      var contextMenu = Menu.buildFromTemplate([
+
+        { label: 'Show App', click:  function(){
+            mainWindow.show();
+        } },
+        { label: 'Quit', click:  function(){
+            app.isQuiting = true;
+            app.quit();
+        } }
+      ]);
+      appIcon.setContextMenu(contextMenu)
+      createWindow()
+  })
 
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
